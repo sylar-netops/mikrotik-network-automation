@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3 mb-2">EOIPs</h4>
+        <table id="example" class="cell-border display nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">host</th>
+                <th scope="col">name</th>
+                <th scope="col">local-address</th>
+                <th scope="col">remote-address</th>
+                <th scope="col">tunnel-id</th>
+                <th scope="col">keepalive</th>
+                <th scope="col">running</th>
+                <th scope="col">disabled</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        {#var devlist = {{ devlist|safe }};#}
+        {#console.log(devlist);#}
+        $(document).ready(function () {
+            $('#example').DataTable({
+                "ajax": {
+                    "url": "getEOIPs",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'host'},
+                    {data: 'name'},
+                    {data: 'local-address'},
+                    {data: 'remote-address'},
+                    {data: 'tunnel-id'},
+                    {data: 'keepalive'},
+                    {
+                        data: 'running',
+                        render: function (data, type, row, meta) {
+                            if (data == 'true') {
+                                return '<nobr><span class="badge text-bg-success">up</span></nobr>';
+                            } else {
+                                return '<nobr><span class="badge text-bg-danger">down</span></nobr>';
+                            }
+                        }
+                    },
+                    {data: 'disabled'}
+                ]
+            });
+        });
+    </script>
+{% endblock body %}

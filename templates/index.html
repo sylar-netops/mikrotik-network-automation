@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3 mb-1">设备列表</h4>
+        <div class="row justify-content-center">
+            <div class="col-auto">
+                <button id="routes" type="button" class="btn btn-danger">all route</button>
+            </div>
+            <div class="col-auto">
+                <button id="route" type="button" class="btn btn-success">route</button>
+            </div>
+            <div class="col-auto">
+                <button id="ppp" type="button" class="btn btn-warning">ppp</button>
+            </div>
+            <div class="col-auto">
+                <button id="bgp" type="button" class="btn btn-info">bgp</button>
+            </div>
+            <div class="col-auto">
+                <button id="mangle" type="button" class="btn btn-secondary">mangle</button>
+            </div>
+        </div>
+
+        <table id="devices" class="cell-border display" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">NAME</th>
+                <th scope="col">IP</th>
+                <th scope="col">VERSION</th>
+                <th scope="col">CPU</th>
+                <th scope="col">MODEL</th>
+                <th scope="col">SN</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#devices').DataTable({
+                "ajax": {
+                    "url": "devices",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'name'},
+                    {data: 'ip'},
+                    {data: 'version'},
+                    {data: 'cpu'},
+                    {data: 'model'},
+                    {data: 'sn'}
+                ],
+                columnDefs: [{type: 'ip-address', targets: 1}],
+                order: [[1, 'asc']]
+            });
+            var table = $('#devices').DataTable();
+
+            $('#devices tbody').on('click', 'tr', function () {
+                $(this).toggleClass('selected');
+            });
+
+            function todosth(action) {
+                var devs = table.rows('.selected').data();
+                if (action == 'mangles') {
+                    alert('In development...')
+                } else if ((devs.length == 0) && (action != 'allRoutes')) {
+                    alert('Please select at least 1 device!')
+                } else if ((devs.length > 1) && (action == 'connections')) {
+                    alert('Only one device can be selected, if connection or mangle.')
+                } else {
+                    var form = $('<form action="/' + action + '" method="post">{% csrf_token %}');
+                    if (action != 'allRoutes') {
+                        var selectedData = [];
+                        devs.each(function (rowData) {
+                            var data = {
+                                name: rowData.name,
+                                ip: rowData.ip
+                            };
+                            selectedData.push(data);
+                        });
+                        {#console.log(selectedData);#}
+                        $.each(selectedData, function (index, data) {
+                            $.each(data, function (key, value) {
+                                form.append($('<input>').attr('type', 'hidden').attr('name', key).val(value));
+                            });
+                        });
+                    }
+                    ;
+                    form.appendTo('body').submit();
+                }
+                ;
+            };
+
+            $('#routes').click(function () {
+                todosth('allRoutes');
+            });
+            $('#route').click(function () {
+                todosth('routes');
+            });
+            $('#connection').click(function () {
+                todosth('connections');
+            });
+            $('#eoip').click(function () {
+                todosth('eoips');
+            });
+            $('#ppp').click(function () {
+                todosth('ppp');
+            });
+            $('#bgp').click(function () {
+                todosth('bgp');
+            });
+            $('#mangle').click(function () {
+                todosth('mangles');
+            });
+        });
+    </script>
+{% endblock body %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3">Connections</h4>
+        <p class="text-center">{{ name }} : {{ ip }}</p>
+        <table id="example" class="cell-border display nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">src-address</th>
+                <th scope="col">dst-address</th>
+                <th scope="col">protocol</th>
+                <th scope="col">orig-bytes</th>
+                <th scope="col">repl-bytes</th>
+                <th scope="col">orig-rate</th>
+                <th scope="col">repl-rate</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#example').DataTable({
+                "ajax": {
+                    "url": "getConnections",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'src-address'},
+                    {data: 'dst-address'},
+                    {data: 'protocol'},
+                    {data: 'orig-bytes'},
+                    {data: 'repl-bytes'},
+                    {data: 'orig-rate'},
+                    {data: 'repl-rate'}
+                ],
+                "order": [[6, 'desc']]
+            });
+        });
+    </script>
+{% endblock body %}

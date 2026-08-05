@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3 mb-2">路由信息</h4>
+        <table id="example" class="cell-border display nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">HOST</th>
+                <th scope="col">ACTIVE</th>
+                <th scope="col">DST-ADDRESS</th>
+                <th scope="col">GATEWAY</th>
+                <th scope="col">PROTOCOL</th>
+                <th scope="col">DISTANCE</th>
+                <th scope="col">VRF</th>
+                <th scope="col">DISABLED</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        {#var devlist = {{ devlist|safe }};#}
+        {#console.log(devlist);#}
+        $(document).ready(function () {
+            $('#example').DataTable({
+                "ajax": {
+                    "url": "{{ url }}",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'host'},
+                    {
+                        data: 'active',
+                        render: function (data, type, row, meta) {
+                            if (data == 'true') {
+                                return '<nobr><span class="badge text-bg-success">active</span></nobr>';
+                            } else {
+                                return '<nobr><span class="badge text-bg-danger">backup</span></nobr>';
+                            }
+                        }
+                    },
+                    {data: 'dst-address'},
+                    {data: 'gateway'},
+                    {data: 'protocol'},
+                    {data: 'distance'},
+                    {data: 'routing-table'},
+                    {data: 'disabled'}
+                ]
+            });
+        });
+    </script>
+{% endblock body %}

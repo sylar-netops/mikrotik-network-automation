@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3 mb-2">Mangles</h4>
+
+        <table id="example" class="cell-border display nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">src-address</th>
+                <th scope="col">dst-address</th>
+                <th scope="col">protocol</th>
+                <th scope="col">orig-bytes</th>
+                <th scope="col">orig-rate</th>
+                <th scope="col">repl-bytes</th>
+                <th scope="col">repl-rate</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#example').DataTable({
+                "ajax": {
+                    "url": "getMangles",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'src-address'},
+                    {data: 'dst-address'},
+                    {data: 'protocol'},
+                    {data: 'orig-bytes'},
+                    {data: 'orig-rate'},
+                    {data: 'repl-bytes'},
+                    {data: 'repl-rate'}
+                ],
+                "order": [[4, 'desc']]
+            });
+        });
+    </script>
+{% endblock body %}

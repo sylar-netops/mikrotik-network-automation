@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <div class="container">
+        <h4 class="mt-3 mb-2">BGP</h4>
+        <table id="example" class="cell-border display nowrap" style="width:100%">
+            <thead>
+            <tr>
+                <th scope="col">host</th>
+                <th scope="col">name</th>
+                <th scope="col">remote-address</th>
+                <th scope="col">remote-as</th>
+                <th scope="col">out-filter</th>
+                <th scope="col">in-filter</th>
+                <th scope="col">disabled</th>
+            </tr>
+            </thead>
+        </table>
+    </div>
+    <script>
+        {#var devlist = {{ devlist|safe }};#}
+        {#console.log(devlist);#}
+        $(document).ready(function () {
+            $('#example').DataTable({
+                "ajax": {
+                    "url": "getBGP",
+                    "dataSrc": "data"
+                },
+                "columns": [
+                    {data: 'host'},
+                    {data: 'name'},
+                    {data: 'remote-address'},
+                    {data: 'remote-as'},
+                    {data: 'out-filter'},
+                    {data: 'in-filter'},
+                    {data: 'disabled'}
+                ],
+                columnDefs: [{type: 'name', targets: 1}],
+                order: [[1, 'asc']]
+            });
+        });
+    </script>
+{% endblock body %}
