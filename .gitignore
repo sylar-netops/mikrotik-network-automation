@@ -1,0 +1,10 @@
+.env
+.idea/
+*.iws
+.venv
+__pycache__
+*.pyc
+.DS_Store
+nohup.out
+nornir.log
+*.sqlite3
