@@ -148,6 +148,9 @@ def getNornir(dev_list):
                 "defaults_dict": {},
             },
         },
+        logging={
+            "enabled": False,
+        },
     )
     return nr
 
@@ -183,6 +186,9 @@ def getNornirByDict(dev_list):
                 "groups_dict": {},
                 "defaults_dict": {},
             },
+        },
+        logging={
+            "enabled": False,
         },
     )
     return nr
