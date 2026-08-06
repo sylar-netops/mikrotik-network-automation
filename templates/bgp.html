@@ -19,12 +19,19 @@
         </table>
     </div>
     <script>
-        {#var devlist = {{ devlist|safe }};#}
-        {#console.logs(devlist);#}
+        var devlist = {{ devlist|safe }};
         $(document).ready(function () {
             $('#example').DataTable({
                 "ajax": {
                     "url": "getBGP",
+                    "type": "POST",
+                    "headers": {
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    "data": function (d) {
+                        d.devices_json = JSON.stringify(devlist);
+                        return d;
+                    },
                     "dataSrc": "data"
                 },
                 "columns": [

@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 from django.shortcuts import render
 
@@ -26,7 +27,7 @@ def routes(request):
     ips = request.POST.getlist('ip')
     dev_list = [{'name': name, 'ip': ip} for name, ip in zip(names, ips)]
     request.session['devices'] = dev_list
-    return render(request, 'routes.html', {'url': 'getRoutes'})
+    return render(request, 'routes.html', {'url': 'getRoutes', 'devlist': json.dumps(dev_list)})
 
 
 def mangles(request):
@@ -34,7 +35,7 @@ def mangles(request):
     ips = request.POST.getlist('ip')
     dev_list = [{'name': name, 'ip': ip} for name, ip in zip(names, ips)]
     request.session['devices'] = dev_list
-    return render(request, 'mangles.html')
+    return render(request, 'mangles.html', {'devlist': json.dumps(dev_list)})
 
 
 def bgp(request):
@@ -42,7 +43,7 @@ def bgp(request):
     ips = request.POST.getlist('ip')
     dev_list = [{'name': name, 'ip': ip} for name, ip in zip(names, ips)]
     request.session['devices'] = dev_list
-    return render(request, 'bgp.html')
+    return render(request, 'bgp.html', {'devlist': json.dumps(dev_list)})
 
 
 def all_routes(request):
@@ -57,7 +58,10 @@ def get_routes(request):
 
 
 def get_bgp(request):
-    dev_list = request.session.get('devices', [])
+    devices_json = request.POST.get('devices_json')
+    if not devices_json:
+        return JsonResponse({'data': [], 'message': '未接收到设备数据'}, status=400)
+    dev_list = json.loads(devices_json)
     nr = getNornirByDict(dev_list)
     bgp = get_res_bgp(nr)
     return JsonResponse({'data': bgp})
