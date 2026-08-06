@@ -7,20 +7,20 @@
         <table id="example" class="cell-border display nowrap" style="width:100%">
             <thead>
             <tr>
-                <th scope="col">host</th>
-                <th scope="col">name</th>
-                <th scope="col">remote-address</th>
-                <th scope="col">remote-as</th>
-                <th scope="col">out-filter</th>
-                <th scope="col">in-filter</th>
-                <th scope="col">disabled</th>
+                <th scope="col">HOST</th>
+                <th scope="col">NAME</th>
+                <th scope="col">LOCAL-ADDRESS</th>
+                <th scope="col">LOCAL-AS</th>
+                <th scope="col">REMOTE-ADDRESS</th>
+                <th scope="col">REMOTE-AS</th>
+                <th scope="col">ESTABLISHED</th>
             </tr>
             </thead>
         </table>
     </div>
     <script>
         {#var devlist = {{ devlist|safe }};#}
-        {#console.log(devlist);#}
+        {#console.logs(devlist);#}
         $(document).ready(function () {
             $('#example').DataTable({
                 "ajax": {
@@ -30,11 +30,20 @@
                 "columns": [
                     {data: 'host'},
                     {data: 'name'},
+                    {data: 'local-address'},
+                    {data: 'local-as'},
                     {data: 'remote-address'},
                     {data: 'remote-as'},
-                    {data: 'out-filter'},
-                    {data: 'in-filter'},
-                    {data: 'disabled'}
+                    {
+                        data: 'established',
+                        render: function (data, type, row, meta) {
+                            if (data == 'true') {
+                                return `<nobr><span class="badge text-bg-success">${data}</span></nobr>`;
+                            } else {
+                                return `<nobr><span class="badge text-bg-danger">${data}</span></nobr>`;
+                            }
+                        }
+                    },
                 ],
                 columnDefs: [{type: 'name', targets: 1}],
                 order: [[1, 'asc']]

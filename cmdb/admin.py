@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from cmdb.models import Device
-from views.tool import getNornir
+from cmdb.utils import getNornir
 from nornir.core.task import Task, Result
 from nornir_routeros.plugins.tasks import routeros_get
 

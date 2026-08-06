@@ -78,7 +78,7 @@
                             };
                             selectedData.push(data);
                         });
-                        {#console.log(selectedData);#}
+                        {#console.logs(selectedData);#}
                         $.each(selectedData, function (index, data) {
                             $.each(data, function (key, value) {
                                 form.append($('<input>').attr('type', 'hidden').attr('name', key).val(value));

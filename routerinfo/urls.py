@@ -15,28 +15,23 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from views import index
 
+from cmdb import views
+
+# 提示：中大型项目应使用 include() 将路由分流到各 APP 内部的 urls.py 中。
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('', admin.site.urls),
-    path('', index.index),
-    path('routes', index.routes),
-    path('getRoutes', index.get_routes),
-    path('allRoutes', index.all_routes),
-    path('getAllRoutes', index.get_all_routes),
-    path('connections', index.connections),
-    path('getConnections', index.get_connections),
-    path('eoips', index.eoips),
-    path('getEOIPs', index.get_eoips),
-    path('mangles', index.mangles),
-    path('getMangles', index.get_mangles),
-    path('ppp', index.ppp),
-    path('getPPP', index.get_ppp),
-    path('bgp', index.bgp),
-    path('getBGP', index.get_bgp),
-    path('devices', index.devices),
-    path('temp', index.temp),
+    path('', views.index),
+    path('routes', views.routes),
+    path('getRoutes', views.get_routes),
+    path('allRoutes', views.all_routes),
+    path('getAllRoutes', views.get_all_routes),
+    path('mangles', views.mangles),
+    path('getMangles', views.get_mangles),
+    path('bgp', views.bgp),
+    path('getBGP', views.get_bgp),
+    path('devices', views.devices),
 ]
 
 
