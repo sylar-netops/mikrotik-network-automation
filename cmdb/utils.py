@@ -2,7 +2,8 @@ import logging
 import os
 from typing import Any, Dict, Type
 
-from django.http.request import host_validation_re
+from django.contrib import messages
+from django.utils import timezone
 from nornir import InitNornir
 from nornir.core.inventory import (
     Inventory,
@@ -16,8 +17,10 @@ from nornir.core.inventory import (
     ParentGroups,
 )
 from nornir.core.plugins.inventory import InventoryPluginRegister
-from nornir.core.task import Task, Result
+from nornir.core.task import Task, Result, AggregatedResult
 from nornir_routeros.plugins.tasks import routeros_get
+
+from .models import Device
 
 logger = logging.getLogger(__name__)
 
@@ -116,23 +119,23 @@ class DictInventory:
         return Inventory(hosts=hosts, groups=groups, defaults=defaults)
 
 
-def getNornir(dev_list):
+def getNornir(queryset):
     InventoryPluginRegister.register('DictInventory', DictInventory)
     routerosapi_dict = {'routerosapi': {'extras': {'plaintext_login': True, 'use_ssl': False}}}
     mt_user = os.environ.get('MT_USER')
     mt_pass = os.environ.get('MT_PASS')
     ROUTEROSAPI = 'routeros'
     hosts_dict = {}
-    for dev in dev_list:
+    for dev in queryset:
         h = {
             'connection_options': routerosapi_dict,
-            'hostname': dev.get('ip'),
-            'name': dev.get('name'),
+            'hostname': dev.ip,
+            'name': dev.name,
             'password': mt_pass,
             'platform': ROUTEROSAPI,
             'username': mt_user
         }
-        hosts_dict[dev.get('name')] = h
+        hosts_dict[dev.name] = h
     nr = InitNornir(
         runner={
             "plugin": "threaded",
@@ -192,12 +195,6 @@ def getNornirByDict(dev_list):
         },
     )
     return nr
-
-
-import logging
-from nornir.core.task import AggregatedResult
-
-logger = logging.getLogger(__name__)
 
 
 def generic_data_cleaner(result: AggregatedResult, parse_callback):
@@ -310,3 +307,88 @@ def get_res_mangles(nr):
         path='/ip/firewall/mangle'
     )
     return generic_data_cleaner(result, _parse_mangle_item)
+
+
+def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_path=None):
+    """
+    【Admin 专属通用更新外壳】
+    :param task_path: 如果是不需要自定义Task，直接调 routeros_get 的情况，可以传 path
+    """
+
+    # 1. 运行 Nornir
+    nr = getNornir(queryset)
+
+    if task_path:
+        results = nr.run(task=routeros_get, path=task_path)
+    else:
+        results = nr.run(task=nornir_task)
+
+    fail_dev = []
+    update_list = []  # 用于批量更新的暂存列表
+    actual_modified_fields = set()
+
+    # 2. 统一的外壳循环与错误捕获
+    for host, task_result in results.items():
+        if host in results.failed_hosts:
+            fail_dev.append(host)
+            logger.error(f"Admin Action 更新设备 {host} 失败: {task_result.exception}")
+            continue
+
+        try:
+            raw_list = task_result.result
+            if not raw_list or not isinstance(raw_list, list):
+                continue
+
+            # 处理数据
+            dev = Device.objects.get(name=host)
+            i = raw_list[0]
+            modified_columns = parse_callback(dev, i)
+            if modified_columns:
+                # 手动添加当前的最新时间，因为bulk_update会跳过自动刷新机制
+                dev.update_time = timezone.now()
+                update_list.append(dev)
+                actual_modified_fields.update(modified_columns)
+
+        except Exception as e:
+            fail_dev.append(host)
+            logger.error(f"解析/更新设备 {host} 数据库字段崩溃: {str(e)}")
+
+    # 3. 性能优化：利用 bulk_update 批量一次性写入数据库
+    if update_list:
+        actual_modified_fields.add('update_time')
+        fields_to_update = list(actual_modified_fields)
+        Device.objects.bulk_update(update_list, fields_to_update)
+
+    # 4. 统一的消息提示
+    success_num = len(queryset) - len(fail_dev)
+    messages.info(request, f'更新成功: {success_num} 台, 失败: {len(fail_dev)} 台. 失败设备: {fail_dev}')
+
+
+def _parse_sn_fields(dev, i):
+    """提取序列号信息"""
+    sn_val = i.get('serial-number') or i.get('system-id') or i.get('software-id') or 'null'
+    dev.sn = sn_val
+    return ['sn']
+
+
+def _parse_resource_fields(dev, i):
+    """提取Version/CPU/Model信息"""
+    dev.version = i.get('version', 'null')
+    dev.cpu = i.get('cpu', 'null')
+    dev.model = i.get('board-name', 'null')
+    return ['version', 'cpu', 'model']
+
+
+def get_sn_task(task):
+    """自定义 Nornir 任务：获取SN"""
+    routerboard_result = task.run(task=routeros_get, path='/system/routerboard')
+    if not routerboard_result or not routerboard_result.result:
+        return Result(host=task.host, failed=True, result="获取 routerboard 失败")
+
+    routerboard = str(routerboard_result.result[0].get('routerboard', 'false'))
+
+    if routerboard == 'true':
+        return routerboard_result[0]
+    else:
+        license_result = task.run(task=routeros_get, path='/system/license')
+        return license_result[0]

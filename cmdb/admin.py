@@ -1,65 +1,23 @@
-from django.contrib import admin, messages
 from cmdb.models import Device
 from cmdb.utils import getNornir
+from django.contrib import admin
 from nornir.core.task import Task, Result
 from nornir_routeros.plugins.tasks import routeros_get
+
+from .utils import generic_admin_updater, get_sn_task, _parse_sn_fields, _parse_resource_fields
+
 
 @admin.action(description='Update SN')
 def update_sn(modeladmin, request, queryset):
     # to update sn
-    nr = getNornir(queryset)
-    results = nr.run(task=get_sn)
-    fail_dev = []
-    for k, v in results.items():
-        if k in results.failed_hosts.keys():
-            fail_dev.append(k)
-            print(k,' error')
-            print(v.exception)
-        else:
-            for i in list(v[0].result):
-                dev = Device.objects.get(name=k)
-                if 'serial-number' in i:
-                    dev.sn = i['serial-number']
-                elif 'system-id' in i:
-                    dev.sn = i['system-id']
-                elif 'software-id' in i:
-                    dev.sn = i['software-id']
-                dev.save()
-    success_num = len(queryset) - len(fail_dev)
-    messages.info(request, 'update sn successful: {}, failed: {}, failed device: {}'.format(success_num, len(fail_dev), fail_dev))
+    generic_admin_updater(queryset, get_sn_task, _parse_sn_fields, request)
 
-def get_sn(task: Task) -> Result:
-    # /system/routerboard or /system/license
-    routerboard_result = task.run(task=routeros_get, path='/system/routerboard')
-    routerboard = routerboard_result[0].result[0]['routerboard']
-    if routerboard == 'true':
-        return Result(host=task.host, result=routerboard_result[0].result)
-    elif routerboard == 'false':
-        license_result = task.run(task=routeros_get, path='/system/license')
-        return Result(host=task.host, result=license_result[0].result)
-    else:
-        return Result(host=task.host, failed=True, result=f"Unsupported routerboard value: {routerboard}")
 
 @admin.action(description='Update Version/CPU/Model')
 def update_version_cpu_model(modeladmin, request, queryset):
     # to update version, cpu and model
-    nr = getNornir(queryset)
-    results = nr.run(task=routeros_get, path='/system/resource')
-    fail_dev = []
-    for k, v in results.items():
-        if k in results.failed_hosts.keys():
-            fail_dev.append(k)
-            print(k,' error')
-            print(v.exception)
-        else:
-            for i in list(v[0].result):
-                dev = Device.objects.get(name=k)
-                dev.version = i['version']
-                dev.cpu = i['cpu']
-                dev.model = i['board-name']
-                dev.save()
-    success_num = len(queryset) - len(fail_dev)
-    messages.info(request, 'update version, cpu and model successful: {}, failed: {}, failed device: {}'.format(success_num, len(fail_dev), fail_dev))
+    generic_admin_updater(queryset, None, _parse_resource_fields, request, task_path='/system/resource')
+
 
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
