@@ -4,10 +4,10 @@ from cmdb.utils import getNornir
 from nornir.core.task import Task, Result
 from nornir_routeros.plugins.tasks import routeros_get
 
+@admin.action(description='Update SN')
 def update_sn(modeladmin, request, queryset):
     # to update sn
     nr = getNornir(queryset)
-    # results = nr.run(task=routeros_get, path='/system/routerboard')
     results = nr.run(task=get_sn)
     fail_dev = []
     for k, v in results.items():
@@ -19,7 +19,6 @@ def update_sn(modeladmin, request, queryset):
             for i in list(v[0].result):
                 dev = Device.objects.get(name=k)
                 if 'serial-number' in i:
-                    # dev.model = i['model']
                     dev.sn = i['serial-number']
                 elif 'system-id' in i:
                     dev.sn = i['system-id']
@@ -41,6 +40,7 @@ def get_sn(task: Task) -> Result:
     else:
         return Result(host=task.host, failed=True, result=f"Unsupported routerboard value: {routerboard}")
 
+@admin.action(description='Update Version/CPU/Model')
 def update_version_cpu_model(modeladmin, request, queryset):
     # to update version, cpu and model
     nr = getNornir(queryset)
@@ -61,10 +61,7 @@ def update_version_cpu_model(modeladmin, request, queryset):
     success_num = len(queryset) - len(fail_dev)
     messages.info(request, 'update version, cpu and model successful: {}, failed: {}, failed device: {}'.format(success_num, len(fail_dev), fail_dev))
 
-update_sn.short_description = 'Update sn'
-update_version_cpu_model.short_description = 'Update version cpu model'
-
-
+@admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     actions = [update_sn, update_version_cpu_model]
     list_display = ['id', 'name', 'ip', 'version', 'cpu', 'model', 'sn', 'created_time', 'update_time']
@@ -77,5 +74,3 @@ class DeviceAdmin(admin.ModelAdmin):
     # exclude = ['password']
     fields = ['id', 'name', 'ip', 'version', 'cpu', 'model', 'sn', 'created_time', 'update_time']
     readonly_fields = ['id', 'update_time', 'created_time']
-
-admin.site.register(Device, DeviceAdmin)
