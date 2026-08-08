@@ -1,9 +1,10 @@
 import json
+
 from django.http import JsonResponse
 from django.shortcuts import render
 
-from cmdb.models import Device
-from cmdb.utils import getNornir, getNornirByDict, get_res_routes, get_res_bgp
+from .models import Device
+from .utils import getNornir, getNornirByDict, get_res_routes, get_res_bgp
 
 
 def index(request):
