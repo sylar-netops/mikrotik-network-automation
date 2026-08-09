@@ -331,7 +331,7 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
     for host, task_result in results.items():
         if host in results.failed_hosts:
             fail_dev.append(host)
-            logger.error(f"Admin Action 更新设备 {host} 失败: {task_result.exception}")
+            logger.error(f"Admin Action failed to update device {host}: {task_result.exception}")
             continue
 
         try:
@@ -351,7 +351,7 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
 
         except Exception as e:
             fail_dev.append(host)
-            logger.error(f"解析/更新设备 {host} 数据库字段崩溃: {str(e)}")
+            logger.error(f"Crash occurred while parsing/updating database fields for device {host}: {str(e)}")
 
     # 3. 性能优化：利用 bulk_update 批量一次性写入数据库
     if update_list:
@@ -361,7 +361,7 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
 
     # 4. 统一的消息提示
     success_num = len(queryset) - len(fail_dev)
-    messages.info(request, f'更新成功: {success_num} 台, 失败: {len(fail_dev)} 台. 失败设备: {fail_dev}')
+    messages.info(request, f'Update completed. Success: {success_num}, Failed: {len(fail_dev)}. Failed devices: {fail_dev}')
 
 
 def _parse_sn_fields(dev, i):
@@ -383,7 +383,7 @@ def get_sn_task(task):
     """自定义 Nornir 任务：获取SN"""
     routerboard_result = task.run(task=routeros_get, path='/system/routerboard')
     if not routerboard_result or not routerboard_result.result:
-        return Result(host=task.host, failed=True, result="获取 routerboard 失败")
+        return Result(host=task.host, failed=True, result="Failed to get routerboard")
 
     routerboard = str(routerboard_result.result[0].get('routerboard', 'false'))
 
