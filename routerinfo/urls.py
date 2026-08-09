@@ -18,7 +18,6 @@ from django.urls import path
 
 from cmdb import views
 
-# 提示：中大型项目应使用 include() 将路由分流到各 APP 内部的 urls.py 中。
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('', admin.site.urls),

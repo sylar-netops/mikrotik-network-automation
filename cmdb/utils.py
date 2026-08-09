@@ -199,29 +199,28 @@ def getNornirByDict(dev_list):
 
 def generic_data_cleaner(result: AggregatedResult, parse_callback):
     """
-    【通用清洗外壳】
-    :param result: Nornir 运行返回的原始结果对象
-    :param parse_callback: 一个函数，定义了具体的单个条目如何转成字典
+    [General Cleaning Shell]
+    :param result: The raw result object returned by Nornir.
+    :param parse_callback: A function defining how a single entry is parsed into a dictionary.
     """
     cleaned_data = []
 
     for host, task_result in result.items():
-        # 1. 统一的错误处理
+        # 1. error handling
         if host in result.failed_hosts:
             logger.error(f"Host {host} failed: {task_result.exception}")
             continue
 
-        # 2. 统一的数据健壮性检查
+        # 2. data robustness check
         try:
             raw_list = task_result.result
             if not isinstance(raw_list, list):
-                # 有些命令成功了但没有返回列表，做个防卷死保护
                 continue
 
             for item in raw_list:
                 logger.info(item)
                 rinfo = parse_callback(host, item)
-                if rinfo:  # 过滤掉可能返回 None 的脏数据
+                if rinfo:  # Filter out dirty data that might return None
                     cleaned_data.append(rinfo)
 
         except Exception as e:
@@ -231,7 +230,7 @@ def generic_data_cleaner(result: AggregatedResult, parse_callback):
 
 
 def _parse_route_item(host, i):
-    """路由条目的提取规则"""
+    """Extraction rules for routing entries."""
     return {
         'host': host,
         'active': 'true' if i.get('active', -1) == 'true' else 'false',
@@ -253,10 +252,9 @@ def get_res_routes(nr):
 
 
 def get_bgp_peers(task: Task) -> Result:
-    # 获取设备的 RouterOS 版本
     version_result = task.run(task=routeros_get, path='/system/resource')
     version = version_result[0].result[0]['version']
-    # 根据版本选择不同的 BGP 命令
+
     if version.startswith('6'):
         path = '/routing/bgp/peer'
     elif version.startswith('7'):
@@ -264,13 +262,12 @@ def get_bgp_peers(task: Task) -> Result:
     else:
         return Result(host=task.host, failed=True, result=f"Unsupported RouterOS version: {version}")
 
-    # 获取 BGP 对等体信息
     bgp_result = task.run(task=routeros_get, path=path)
     return Result(host=task.host, failed=bgp_result.failed, result=bgp_result[0].result)
 
 
 def _parse_bgp_peer_item(host, i):
-    """BGP 邻居的提取规则"""
+    """Extraction rules for BGP neighbor entries."""
     return {
         'host': host,
         'name': i.get('name', 'null'),
@@ -283,14 +280,14 @@ def _parse_bgp_peer_item(host, i):
 
 
 def get_res_bgp(nr):
-    """清洗获取到的BGP邻居数据"""
+    """Clean the retrieved BGP neighbor data."""
     result = nr.run(task=get_bgp_peers)
     return generic_data_cleaner(result, _parse_bgp_peer_item)
 
 
 def _parse_mangle_item(host, i):
-    """IP Firewall Mangle 的提取规则"""
-    # 未完成
+    """Extraction rules for IP Firewall Mangle."""
+    # TODO: Incomplete, routing-mark, routing rules
     return {
         'host': host,
         'chain': i.get('chain', 'null'),
@@ -311,11 +308,11 @@ def get_res_mangles(nr):
 
 def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_path=None):
     """
-    【Admin 专属通用更新外壳】
-    :param task_path: 如果是不需要自定义Task，直接调 routeros_get 的情况，可以传 path
+    [Admin Universal Update Shell]
+    :param task_path: Pass 'path' if calling 'routeros_get' directly without custom tasks.
     """
 
-    # 1. 运行 Nornir
+    # 1. Run Nornir
     nr = getNornir(queryset)
 
     if task_path:
@@ -324,10 +321,10 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
         results = nr.run(task=nornir_task)
 
     fail_dev = []
-    update_list = []  # 用于批量更新的暂存列表
+    update_list = []  # Staging list for bulk_update
     actual_modified_fields = set()
 
-    # 2. 统一的外壳循环与错误捕获
+    # 2. Unified loop & error handling
     for host, task_result in results.items():
         if host in results.failed_hosts:
             fail_dev.append(host)
@@ -339,12 +336,12 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
             if not raw_list or not isinstance(raw_list, list):
                 continue
 
-            # 处理数据
+            # Process data
             dev = Device.objects.get(name=host)
             i = raw_list[0]
             modified_columns = parse_callback(dev, i)
             if modified_columns:
-                # 手动添加当前的最新时间，因为bulk_update会跳过自动刷新机制
+                # Manually add timestamp since bulk_update skips auto_now
                 dev.update_time = timezone.now()
                 update_list.append(dev)
                 actual_modified_fields.update(modified_columns)
@@ -353,26 +350,26 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
             fail_dev.append(host)
             logger.error(f"Crash occurred while parsing/updating database fields for device {host}: {str(e)}")
 
-    # 3. 性能优化：利用 bulk_update 批量一次性写入数据库
+    # 3. Performance: Use bulk_update for one-time DB write
     if update_list:
         actual_modified_fields.add('update_time')
         fields_to_update = list(actual_modified_fields)
         Device.objects.bulk_update(update_list, fields_to_update)
 
-    # 4. 统一的消息提示
+    # 4. Unified notification alerts
     success_num = len(queryset) - len(fail_dev)
     messages.info(request, f'Update completed. Success: {success_num}, Failed: {len(fail_dev)}. Failed devices: {fail_dev}')
 
 
 def _parse_sn_fields(dev, i):
-    """提取序列号信息"""
+    """Extract SN info."""
     sn_val = i.get('serial-number') or i.get('system-id') or i.get('software-id') or 'null'
     dev.sn = sn_val
     return ['sn']
 
 
 def _parse_resource_fields(dev, i):
-    """提取Version/CPU/Model信息"""
+    """Extract Version/CPU/Model info."""
     dev.version = i.get('version', 'null')
     dev.cpu = i.get('cpu', 'null')
     dev.model = i.get('board-name', 'null')
@@ -380,7 +377,7 @@ def _parse_resource_fields(dev, i):
 
 
 def get_sn_task(task):
-    """自定义 Nornir 任务：获取SN"""
+    """Custom Nornir task: Get SN."""
     routerboard_result = task.run(task=routeros_get, path='/system/routerboard')
     if not routerboard_result or not routerboard_result.result:
         return Result(host=task.host, failed=True, result="Failed to get routerboard")

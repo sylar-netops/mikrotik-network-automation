@@ -130,45 +130,38 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    # 1. 定义日志的显示格式
     'formatters': {
         'standard': {
             'format': '[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
     },
-    # 2. 定义日志的输出去向（输出到终端，还是存入文件）
     'handlers': {
-        # 打印到终端控制台，接收 DEBUG 级别及以上（包含 INFO, WARNING, ERROR）
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'standard',
         },
-        # 存入专门的运维错误日志文件
         'file_netops': {
             'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs/network_ops.log',  # 日志文件存放在项目根目录的 logs 文件夹下
-            'maxBytes': 1024 * 1024 * 5,  # 超过 5MB 自动切分新文件
-            'backupCount': 5,             # 最多保留 5 个历史备份
+            'filename': BASE_DIR / 'logs/network_ops.log',
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
             'formatter': 'standard',
             'encoding': 'utf-8',
         },
-        # 记录正常流水日志
         'file_info': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': BASE_DIR / 'logs/network_info.log',
-            'maxBytes': 1024 * 1024 * 10,  # 正常流水较多，文件可以设大一点（10MB）
+            'maxBytes': 1024 * 1024 * 10,
             'backupCount': 5,
             'formatter': 'standard',
             'encoding': 'utf-8',
         },
     },
-    # 3. 定义哪些模块的代码可以调用这些规则
     'loggers': {
-        # 这是一个通用的根日志记录器，捕获所有日志
         '': {
             'handlers': ['console', 'file_netops', 'file_info'],
             'level': 'INFO',
