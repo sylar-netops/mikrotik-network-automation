@@ -61,7 +61,7 @@ def get_routes(request):
 def get_bgp(request):
     devices_json = request.POST.get('devices_json')
     if not devices_json:
-        return JsonResponse({'data': [], 'message': '未接收到设备数据'}, status=400)
+        return JsonResponse({'data': [], 'message': 'devices_json is none'}, status=400)
     dev_list = json.loads(devices_json)
     nr = getNornirByDict(dev_list)
     bgp = get_res_bgp(nr)
