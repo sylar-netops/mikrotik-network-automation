@@ -40,8 +40,8 @@ The project separates **persistent device information** from **real-time network
 Clone the repository:
 
 ```bash
-git clone https://github.com/<username>/<repository-name>.git
-cd <repository-name>
+git clone https://github.com/sylar-netops/mikrotik-network-automation.git
+cd mikrotik-network-automation
 ```
 
 Create a virtual environment:
@@ -55,6 +55,16 @@ Install dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+SECRET_KEY=your-django-secret-key
+MT_USER=your-mikrotik-username
+MT_PASS=your-mikrotik-password
 ```
 
 Apply database migrations:
