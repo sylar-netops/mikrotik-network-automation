@@ -114,12 +114,12 @@ http://127.0.0.1:8000/
 
 ### BGP Neighbors
 
-![BGP Peer](./static/images/bgp peer.png)
+![BGP Peer](./static/images/bgp_peer.png)
 
 ### Device Management
 
-<img src="./static/images/add device.png" width="50%" alt="Add Device">
-<img src="./static/images/update version.png" width="50%" alt="Update Version">
+<img src="./static/images/add_device.png" width="50%" alt="Add Device">
+<img src="./static/images/update_version.png" width="50%" alt="Update Version">
 
 ## Purpose
 
