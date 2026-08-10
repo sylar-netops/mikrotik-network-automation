@@ -70,6 +70,7 @@ MT_PASS=your-mikrotik-password
 Apply database migrations:
 
 ```bash
+python manage.py makemigrations
 python manage.py migrate
 ```
 

@@ -8,4 +8,5 @@ __pycache__
 nohup.out
 nornir.log
 *.sqlite3
-/logs/
+*.log
+!/logs/.gitkeep
