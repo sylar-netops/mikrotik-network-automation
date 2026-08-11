@@ -1,8 +1,5 @@
 from cmdb.models import Device
-from cmdb.utils import getNornir
 from django.contrib import admin
-from nornir.core.task import Task, Result
-from nornir_routeros.plugins.tasks import routeros_get
 
 from .utils import generic_admin_updater, get_sn_task, _parse_sn_fields, _parse_resource_fields
 

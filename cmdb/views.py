@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 from .models import Device
-from .utils import getNornir, getNornirByDict, get_res_routes, get_res_bgp
+from .utils import get_nornir, get_nornir_from_dict, get_res_routes, get_res_bgp
 
 
 def index(request):
@@ -53,7 +53,7 @@ def all_routes(request):
 
 def get_routes(request):
     dev_list = request.session.get('devices', [])
-    nr = getNornirByDict(dev_list)
+    nr = get_nornir_from_dict(dev_list)
     routes = get_res_routes(nr)
     return JsonResponse({'data': routes})
 
@@ -63,7 +63,7 @@ def get_bgp(request):
     if not devices_json:
         return JsonResponse({'data': [], 'message': 'devices_json is none'}, status=400)
     dev_list = json.loads(devices_json)
-    nr = getNornirByDict(dev_list)
+    nr = get_nornir_from_dict(dev_list)
     bgp = get_res_bgp(nr)
     return JsonResponse({'data': bgp})
 
@@ -75,7 +75,7 @@ def get_mangles(request):
 
 def get_all_routes(request):
     # print(time.strftime("%Y-%m-%d %X", time.localtime()))
-    nr = getNornir(Device.objects.all())
+    nr = get_nornir(Device.objects.all())
     routes = get_res_routes(nr)
     # print(time.strftime("%Y-%m-%d %X", time.localtime()))
     return JsonResponse({'data': routes})

@@ -119,51 +119,21 @@ class DictInventory:
         return Inventory(hosts=hosts, groups=groups, defaults=defaults)
 
 
-def getNornir(queryset):
-    InventoryPluginRegister.register('DictInventory', DictInventory)
-    routerosapi_dict = {'routerosapi': {'extras': {'plaintext_login': True, 'use_ssl': False}}}
-    mt_user = os.environ.get('MT_USER')
-    mt_pass = os.environ.get('MT_PASS')
-    ROUTEROSAPI = 'routeros'
-    hosts_dict = {}
-    for dev in queryset:
-        h = {
-            'connection_options': routerosapi_dict,
-            'hostname': dev.ip,
-            'name': dev.name,
-            'password': mt_pass,
-            'platform': ROUTEROSAPI,
-            'username': mt_user
-        }
-        hosts_dict[dev.name] = h
-    nr = InitNornir(
-        runner={
-            "plugin": "threaded",
-            "options": {
-                "num_workers": 100,
-            },
-        },
-        inventory={
-            "plugin": "DictInventory",
-            "options": {
-                "hosts_dict": hosts_dict,
-                "groups_dict": {},
-                "defaults_dict": {},
-            },
-        },
-        logging={
-            "enabled": False,
-        },
-    )
+InventoryPluginRegister.register('DictInventory', DictInventory)
+
+ROUTEROSAPI = 'routeros'
+routerosapi_dict = {'routerosapi': {'extras': {'plaintext_login': True, 'use_ssl': False}}}
+mt_user = os.environ.get('MT_USER')
+mt_pass = os.environ.get('MT_PASS')
+
+
+def get_nornir(queryset):
+    dev_list = [{'ip': d.ip, 'name': d.name} for d in queryset]
+    nr = get_nornir_from_dict(dev_list)
     return nr
 
 
-def getNornirByDict(dev_list):
-    InventoryPluginRegister.register('DictInventory', DictInventory)
-    routerosapi_dict = {'routerosapi': {'extras': {'plaintext_login': True, 'use_ssl': False}}}
-    mt_user = os.environ.get('MT_USER')
-    mt_pass = os.environ.get('MT_PASS')
-    ROUTEROSAPI = 'routeros'
+def get_nornir_from_dict(dev_list):
     hosts_dict = {}
     for dev in dev_list:
         h = {
@@ -313,7 +283,7 @@ def generic_admin_updater(queryset, nornir_task, parse_callback, request, task_p
     """
 
     # 1. Run Nornir
-    nr = getNornir(queryset)
+    nr = get_nornir(queryset)
 
     if task_path:
         results = nr.run(task=routeros_get, path=task_path)
